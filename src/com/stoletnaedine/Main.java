@@ -1,13 +1,10 @@
 package com.stoletnaedine;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.*;
 
 public class Main {
-    private static long SIZE_BYTES = 65_536; // буфер 64кб
+    private static long SIZE_BYTES = 33_554_432; // буффер 32 Мб
 
     public static void main(String[] args) throws IOException {
         Scanner in = new Scanner(System.in);
@@ -16,10 +13,7 @@ public class Main {
         try {
             inputParameters = in.nextLine();
             while (inputParameters.isEmpty()) {
-                System.out.println("Please, enter through the space bar:");
-                System.out.println("1. Filename or path (required) - file will overwrite");
-                System.out.println("2. Output filename — optional");
-                System.out.println("3. Reversal type (bit or byte) — optional");
+                printHelp();
                 inputParameters = in.nextLine();
             }
         } catch (InputMismatchException e) {
@@ -29,7 +23,7 @@ public class Main {
         List<String> parametersList = Arrays.asList(inputParameters.split(" ")); // разделяем строку на параметры
         String inputFileName = parametersList.get(0).trim(); // имя исходного файла
         String outputFileName;
-        String reversalType = "byte"; // byte or bit, default = "byte"
+        boolean isBitwise = false; // byte or bit, default = "byte"
         File inputFile = null;
         try {
             inputFile = new File(inputFileName);
@@ -42,20 +36,20 @@ public class Main {
         long startTime = System.currentTimeMillis();
         Main reverseFile = new Main();
         if (parametersList.size() == 1) {
-            reverseFile.overwriteFile(inputFile, reversalType); // переворот и перезапись побайтово
+            reverseFile.overwriteFile(inputFile, isBitwise); // переворот и перезапись побайтово
         }
         else {
-            if (parametersList.size() == 3) {
-                reversalType = parametersList.get(2).toLowerCase().trim(); // тип переворота
+            if (parametersList.size() == 3 && parametersList.get(2).equals("bit")) {
+                isBitwise = true; // тип переворота БИТ
             }
             outputFileName = parametersList.get(1).trim(); // имя выходного файла
             File outputFile = new File(outputFileName);
-            reverseFile.writeToFile(inputFile, outputFile, reversalType); // переворот и запись в новый файл
+            reverseFile.writeToFile(inputFile, outputFile, isBitwise); // переворот и запись в новый файл
         }
         System.out.println(System.currentTimeMillis() - startTime + " ms");
     }
 
-    private void writeToFile (File inputFile, File outputFile, String type) throws IOException { // запись в новый файл
+    private void writeToFile (File inputFile, File outputFile, boolean isBitwise) throws IOException { // запись в новый файл
         long BUFFER_SIZE;
         long FILE_LENGTH = inputFile.length();
         System.out.println("File length: " + FILE_LENGTH + " bytes");
@@ -65,16 +59,10 @@ public class Main {
         long CURSOR = FILE_LENGTH - BUFFER_SIZE;
         byte[] buffer = new byte[(int) BUFFER_SIZE];
         byte[] result;
-        while (CURSOR >= 0) { // берем буфер с хвоста, переворачиваем и пишем в новый файл
+        while (CURSOR >= 0) { // берем буффер с хвоста, переворачиваем и пишем в новый файл
             input.seek(CURSOR);
             input.read(buffer);
-            if (type.equals("bit")) { // если тип БИТ
-                BitSet bits = BitSet.valueOf(buffer);
-                result = reverseBits(bits).toByteArray();
-            }
-            else { // если тип БАЙТ
-                result = reverseBytes(buffer);
-            }
+            result = reverseBytes(buffer, isBitwise);
             output.write(result);
             CURSOR = CURSOR - BUFFER_SIZE;
             if (CURSOR < 0) {
@@ -82,13 +70,7 @@ public class Main {
                 CURSOR = 0;
                 input.seek(CURSOR);
                 input.read(buffer);
-                if (type.equals("bit")) {  // если тип БИТ
-                    BitSet bits = BitSet.valueOf(buffer);
-                    result = reverseBits(bits).toByteArray();
-                }
-                else {  // если тип БАЙТ
-                    result = reverseBytes(buffer);
-                }
+                result = reverseBytes(buffer, isBitwise);
                 output.write(result);
                 System.out.println("Complete!");
                 return;
@@ -98,7 +80,7 @@ public class Main {
         output.close();
     }
 
-    private void overwriteFile (File inputFile, String type) throws IOException { // перезапись файла
+    private void overwriteFile (File inputFile, boolean isBitwise) throws IOException { // перезапись файла
         long BUFFER_SIZE;
         long FILE_LENGTH = inputFile.length();
         System.out.println("File length: " + FILE_LENGTH + " bytes");
@@ -116,16 +98,8 @@ public class Main {
             input.read(bufferTail);
             input.seek(CURSOR_HEAD);
             input.read(bufferHead);
-            if (type.equals("bit")) {
-                BitSet bitsTail = BitSet.valueOf(bufferTail);
-                resultTail = reverseBits(bitsTail).toByteArray();
-                BitSet bitsHead = BitSet.valueOf(bufferHead);
-                resultHead = reverseBits(bitsHead).toByteArray();
-            }
-            else {
-                resultTail = reverseBytes(bufferTail);
-                resultHead = reverseBytes(bufferHead);
-            }
+            resultTail = reverseBytes(bufferTail, isBitwise);
+            resultHead = reverseBytes(bufferHead, isBitwise);
             input.seek(CURSOR_HEAD);
             input.write(resultTail);
             input.seek(CURSOR_TAIL);
@@ -138,35 +112,28 @@ public class Main {
         input.seek(CURSOR_HEAD);
         input.read(bufferCenter);
         input.seek(CURSOR_HEAD);
-        if (type.equals("bit")) {
-            BitSet bitsCenter = BitSet.valueOf(bufferCenter);
-            resultCenter = reverseBits(bitsCenter).toByteArray();
-        }
-        else {
-            resultCenter = reverseBytes(bufferCenter);
-        }
+        resultCenter = reverseBytes(bufferCenter, isBitwise);
         input.write(resultCenter);
         input.close();
         System.out.println("Complete!");
+    }
+
+    static void printHelp() {
+        System.out.println("Please, enter through the space bar:");
+        System.out.println("1. Filename or path (required) - file will overwrite");
+        System.out.println("2. Output filename — optional");
+        System.out.println("3. Reversal type (bit or byte) — optional");
     }
     
     static byte reverseBits(byte value) {
 		return (byte) (Integer.reverse(value & 0xFF) >>> 24);
 	}
 
-//    static BitSet reverseBits(BitSet bits) { // переворот бит
-//        for (int i = 0, j = bits.size(); i < j; i++, j--) {
-//            boolean temp = bits.get(i);
-//            bits.set(i, bits.get(j));
-//            bits.set(j, temp);
-//        }
-//        return bits;
-//    }
 
-    static byte[] reverseBytes(byte[] bytes) { // переворот байт
+    static byte[] reverseBytes(byte[] bytes, boolean isBitwise) { // переворот байт/бит
         for (int i = 0, j = bytes.length - 1; i < j; i++, j--) {
-            byte temp = bytes[i];
-            bytes[i] = bytes[j];
+            byte temp = (isBitwise) ? reverseBits(bytes[i]) : bytes[i];
+            bytes[i] = (isBitwise) ? reverseBits(bytes[j]) : bytes[j];
             bytes[j] = temp;
         }
         return bytes;
