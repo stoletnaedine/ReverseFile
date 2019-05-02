@@ -149,15 +149,19 @@ public class Main {
         input.close();
         System.out.println("Complete!");
     }
+    
+    static byte reverseBits(byte value) {
+		return (byte) (Integer.reverse(value & 0xFF) >>> 24);
+	}
 
-    static BitSet reverseBits(BitSet bits) { // переворот бит
-        for (int i = 0, j = bits.size(); i < j; i++, j--) {
-            boolean temp = bits.get(i);
-            bits.set(i, bits.get(j));
-            bits.set(j, temp);
-        }
-        return bits;
-    }
+//    static BitSet reverseBits(BitSet bits) { // переворот бит
+//        for (int i = 0, j = bits.size(); i < j; i++, j--) {
+//            boolean temp = bits.get(i);
+//            bits.set(i, bits.get(j));
+//            bits.set(j, temp);
+//        }
+//        return bits;
+//    }
 
     static byte[] reverseBytes(byte[] bytes) { // переворот байт
         for (int i = 0, j = bytes.length - 1; i < j; i++, j--) {
