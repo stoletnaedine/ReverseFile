@@ -55,7 +55,8 @@ public class Main {
         System.out.println("File length: " + FILE_LENGTH + " bytes");
         BUFFER_SIZE = (FILE_LENGTH > SIZE_BYTES) ? SIZE_BYTES : FILE_LENGTH; // если файл меньше 64кб, то без буфера
         RandomAccessFile input = new RandomAccessFile(inputFile, "r");
-        RandomAccessFile output = new RandomAccessFile(outputFile, "rw");
+        FileOutputStream output = new FileOutputStream(outputFile.getPath());
+        System.out.println(outputFile.getPath());
         long CURSOR = FILE_LENGTH - BUFFER_SIZE;
         byte[] buffer = new byte[(int) BUFFER_SIZE];
         byte[] result;
@@ -72,12 +73,10 @@ public class Main {
                 input.read(buffer);
                 result = reverseBytes(buffer, isBitwise);
                 output.write(result);
-                System.out.println("Complete!");
+                System.out.printf("Файл '%s' перевернут и записан в файл '%s'.\n", inputFile.getName(), outputFile.getName());
                 return;
             }
         }
-        input.close();
-        output.close();
     }
 
     private void overwriteFile (File inputFile, boolean isBitwise) throws IOException { // перезапись файла
@@ -115,7 +114,7 @@ public class Main {
         resultCenter = reverseBytes(bufferCenter, isBitwise);
         input.write(resultCenter);
         input.close();
-        System.out.println("Complete!");
+        System.out.printf("Файл '%s' перевернут.\n", inputFile.getName());
     }
 
     static void printHelp() {
@@ -128,7 +127,6 @@ public class Main {
     static byte reverseBits(byte value) {
 		return (byte) (Integer.reverse(value & 0xFF) >>> 24);
 	}
-
 
     static byte[] reverseBytes(byte[] bytes, boolean isBitwise) { // переворот байт/бит
         for (int i = 0, j = bytes.length - 1; i < j; i++, j--) {
