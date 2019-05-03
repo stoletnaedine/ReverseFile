@@ -4,7 +4,9 @@ import java.io.*;
 import java.util.*;
 
 public class Main {
-    private static long SIZE_BYTES = 33_554_432; // буффер 32 Мб
+    static long SIZE_BYTES = 33_554_432; // буффер 32 Мб
+    static String inputFileName = null;
+    static String outputFileName = null;
 
     public static void main(String[] args) throws IOException {
         Scanner in = new Scanner(System.in);
@@ -19,10 +21,8 @@ public class Main {
         } catch (InputMismatchException e) {
             e.printStackTrace();
         }
-        in.close();
         List<String> parametersList = Arrays.asList(inputParameters.split(" ")); // разделяем строку на параметры
         String inputFileName = parametersList.get(0).trim(); // имя исходного файла
-        String outputFileName;
         boolean isBitwise = false; // byte or bit, default = "byte"
         File inputFile = null;
         try {
@@ -49,14 +49,12 @@ public class Main {
         System.out.println(System.currentTimeMillis() - startTime + " ms");
     }
 
-    private void writeToFile (File inputFile, File outputFile, boolean isBitwise) throws IOException { // запись в новый файл
+    void writeToFile (File inputFile, File outputFile, boolean isBitwise) throws IOException { // запись в новый файл
         long BUFFER_SIZE;
         long FILE_LENGTH = inputFile.length();
-        System.out.println("File length: " + FILE_LENGTH + " bytes");
-        BUFFER_SIZE = (FILE_LENGTH > SIZE_BYTES) ? SIZE_BYTES : FILE_LENGTH; // если файл меньше 64кб, то без буфера
+        BUFFER_SIZE = (FILE_LENGTH > SIZE_BYTES) ? SIZE_BYTES : FILE_LENGTH; // если файл меньше 32 Мб, то без буффера
         RandomAccessFile input = new RandomAccessFile(inputFile, "r");
         FileOutputStream output = new FileOutputStream(outputFile.getPath());
-        System.out.println(outputFile.getPath());
         long CURSOR = FILE_LENGTH - BUFFER_SIZE;
         byte[] buffer = new byte[(int) BUFFER_SIZE];
         byte[] result;
@@ -79,12 +77,11 @@ public class Main {
         }
     }
 
-    private void overwriteFile (File inputFile, boolean isBitwise) throws IOException { // перезапись файла
+    void overwriteFile (File inputFile, boolean isBitwise) throws IOException { // перезапись файла
         long BUFFER_SIZE;
         long FILE_LENGTH = inputFile.length();
-        System.out.println("File length: " + FILE_LENGTH + " bytes");
         long ITER = FILE_LENGTH / SIZE_BYTES;
-        BUFFER_SIZE = (FILE_LENGTH > SIZE_BYTES) ? SIZE_BYTES : FILE_LENGTH; // если файл меньше 64кб, то без буфера
+        BUFFER_SIZE = (FILE_LENGTH > SIZE_BYTES) ? SIZE_BYTES : FILE_LENGTH; // если файл меньше 32 Мб, то без буффера
         RandomAccessFile input = new RandomAccessFile(inputFile, "rw");
         long CURSOR_TAIL = FILE_LENGTH - BUFFER_SIZE;
         long CURSOR_HEAD = 0;
@@ -125,7 +122,7 @@ public class Main {
     }
     
     static byte reverseBits(byte value) {
-		return (byte) (Integer.reverse(value & 0xFF) >>> 24);
+        return (byte) (Integer.reverse(value & 0xFF) >>> 24);
 	}
 
     static byte[] reverseBytes(byte[] bytes, boolean isBitwise) { // переворот байт/бит
