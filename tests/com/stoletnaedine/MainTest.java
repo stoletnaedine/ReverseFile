@@ -38,7 +38,14 @@ class MainTest {
     }
 
     @org.junit.jupiter.api.Test
-    void overwriteFile() {
+    void overwriteFileTestLength() throws IOException {
+        Main.inputFileName = "/Users/arturisart/IdeaProjects/HW1/tests/file";
+        File input = new File(Main.inputFileName);
+        long inputLength = input.length();
+        Main reverse = new Main();
+        reverse.overwriteFile(input, false);
+        long outputLength = input.length();
+        assertEquals(inputLength, outputLength);
     }
 
     @org.junit.jupiter.api.Test
